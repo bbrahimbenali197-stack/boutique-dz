@@ -1,8 +1,53 @@
-<!doctype html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Boutique DZ</title><link rel="stylesheet" href="style.css"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js"></script></head><body><header><div class="header-inner"><div class="brand">🛍️ Boutique DZ</div><a class="btn light" href="#commande">Panier / Commander</a></div></header><main class="container"><div id="message"></div><section class="card"><h1>Nos produits</h1><p class="small">Paiement à la livraison en Algérie.</p></section><section id="products" class="grid"></section><section id="commande" class="card"><h2>Votre commande</h2><div id="cart"></div><h3 id="total">Total : 0 DA</h3><form id="order"><div class="form-grid"><div><label>Nom et prénom *</label><input id="name" required></div><div><label>Téléphone *</label><input id="phone" required></div><div><label>Wilaya *</label><input id="wilaya" required></div><div><label>Commune</label><input id="commune"></div><div class="full"><label>Adresse *</label><textarea id="address" required></textarea></div></div><br><button class="primary">Commander</button></form></section></main><footer><center>© Boutique DZ</center></footer><script>
-let products=[],cart=[];const money=n=>new Intl.NumberFormat("fr-DZ").format(n)+" DA";const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
-async function load(){let{data,error}=await sb.from("products").select("*").eq("active",true).order("created_at",{ascending:false});if(error)return msg(error.message,"error");products=data||[];document.getElementById("products").innerHTML=products.map(p=>`<article class="product"><img src="${esc(p.image_url)}" alt="${esc(p.name)}"><div class="product-body"><h3>${esc(p.name)}</h3><div class="price">${money(p.price)}</div><p>${esc(p.description||"")}</p><button class="primary" onclick="add(${p.id})">Ajouter au panier</button></div></article>`).join("")}
-function add(id){let p=products.find(x=>x.id===id),q=cart.find(x=>x.id===id);q?q.qty++:cart.push({...p,qty:1});render();document.getElementById("commande").scrollIntoView({behavior:"smooth"})}
-function render(){document.getElementById("cart").innerHTML=cart.length?cart.map((p,i)=>`<div class="cart-row"><b>${esc(p.name)}</b> — ${money(p.price)} × ${p.qty} <button class="light" onclick="qty(${i},-1)">−</button><button class="light" onclick="qty(${i},1)">+</button></div>`).join(""):"<p class=small>Panier vide.</p>";document.getElementById("total").textContent="Total : "+money(cart.reduce((s,p)=>s+p.price*p.qty,0))}
-function qty(i,d){cart[i].qty+=d;if(cart[i].qty<=0)cart.splice(i,1);render()}
-function msg(t,c="notice"){document.getElementById("message").innerHTML=`<div class="notice ${c}">${esc(t)}</div>`}
-document.getElementById("order").onsubmit=async e=>{e.preventDefault();if(!cart.length)return msg("Ajoutez un produit au panier.","error");let total=cart.reduce((s,p)=>s+p.price*p.qty,0),o={customer_name:name.value.trim(),phone:phone.value.trim(),wilaya:wilaya.value.trim(),commune:commune.value.trim(),address:address.value.trim(),total,items:cart.map(p=>({id:p.id,name:p.name,price:p.price,qty:p.qty})),status:"new"};let{error}=await sb.from("orders").insert(o);if(error)return msg(error.message,"error");let text="Bonjour, je confirme ma commande :\n\n"+cart.map(p=>p.name+" x"+p.qty).join("\n")+"\n\nTotal : "+money(total)+"\nNom : "+o.customer_name+"\nTéléphone : "+o.phone+"\nWilaya : "+o.wilaya+"\nCommune : "+o.commune+"\nAdresse : "+o.address;window.open("https://wa.me/"+WHATSAPP_NUMBER+"?text="+encodeURIComponent(text),"_blank");msg("Commande enregistrée. WhatsApp va s'ouvrir.","success");cart=[];render();e.target.reset()};load();render();</script></body></html>
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Boutique DZ</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div class="top"><div class="brand">Boutique <span>DZ</span></div>
+    <button class="cart" onclick="openCart()">🛒 Panier <b id="cartCount">0</b></button>
+  </div>
+  <div class="hero"><div><p class="tag">🇩🇿 Livraison partout en Algérie</p>
+    <h1>Des produits utiles,<br><span>au meilleur prix.</span></h1>
+    <p>Commandez en ligne. Paiement à la livraison.</p>
+    <a href="#products" class="btn">Voir les produits</a></div></div>
+</header>
+
+<main id="products">
+  <div class="section-head"><h2>Nos produits</h2><input id="search" placeholder="Rechercher un produit..." oninput="renderProducts()"></div>
+  <div id="productsGrid" class="grid"></div>
+</main>
+
+<section class="why"><h2>Pourquoi commander chez nous ?</h2>
+  <div class="features"><div>🚚 <b>Livraison</b><small>Partout en Algérie</small></div>
+  <div>💵 <b>Paiement à la livraison</b><small>Payez à la réception</small></div>
+  <div>📞 <b>Service client</b><small>Nous confirmons votre commande</small></div></div>
+</section>
+
+<footer>© 2026 Boutique DZ — Tous droits réservés</footer>
+
+<div id="cartModal" class="modal hidden"><div class="box">
+  <button class="close" onclick="closeCart()">×</button><h2>Votre panier</h2>
+  <div id="cartItems"></div><div class="total">Total : <strong id="cartTotal">0 DA</strong></div>
+  <button class="btn full" onclick="showOrder()">Commander</button>
+</div></div>
+
+<div id="orderModal" class="modal hidden"><div class="box">
+  <button class="close" onclick="closeOrder()">×</button><h2>Finaliser la commande</h2>
+  <form id="orderForm" onsubmit="submitOrder(event)">
+    <input name="name" required placeholder="Nom et prénom">
+    <input name="phone" required placeholder="Téléphone">
+    <input name="wilaya" required placeholder="Wilaya">
+    <input name="commune" required placeholder="Commune">
+    <textarea name="address" required placeholder="Adresse de livraison"></textarea>
+    <button class="btn full">Confirmer la commande</button>
+  </form>
+  <p class="note">Paiement à la livraison. Votre commande sera confirmée par téléphone.</p>
+</div></div>
+<script src="script.js"></script>
+</body>
+</html>

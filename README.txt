@@ -1,9 +1,28 @@
-BOUTIQUE DZ — VERSION AVEC UPLOAD AUTOMATIQUE DES IMAGES
+BOUTIQUE DZ - VERSION SIMPLE
 
-1. Dans Supabase > SQL Editor, exécutez supabase_setup.sql.
-2. Dans votre dépôt GitHub Pages boutique-dz, remplacez index.html, admin.html, config.js et style.css par ceux de ce ZIP.
-3. Ouvrez /admin.html et connectez-vous avec votre utilisateur Supabase Auth.
-4. Pour ajouter un produit, choisissez une photo depuis votre ordinateur/téléphone. Elle est automatiquement envoyée dans Supabase Storage et son URL est enregistrée dans products.image_url.
-5. Maximum image : 5 Mo.
-6. Les commandes sont enregistrées dans Supabase puis une confirmation WhatsApp s'ouvre sur 213561716497.
-7. N'utilisez jamais une clé secret/service_role dans le navigateur.
+1. Décompressez le dossier.
+2. Ouvrez index.html avec Chrome/Edge.
+3. Modifiez les produits dans script.js :
+   - name = nom
+   - price = prix en DA
+   - image = URL de l'image
+   - desc = description
+
+IMPORTANT :
+Cette première version fonctionne sans serveur et sans base de données.
+Les commandes sont préparées côté navigateur et affichées comme confirmation.
+Pour recevoir automatiquement les commandes, il faudra ensuite connecter un formulaire à WhatsApp, Google Sheets, email ou une base de données.
+
+Pour mettre le site en ligne :
+- Netlify / GitHub Pages / hébergement web classique.
+
+
+VERSION 2 - WHATSAPP
+Dans script.js, trouve :
+const WHATSAPP_NUMBER="213XXXXXXXXX";
+
+Remplace-le par ton numéro WhatsApp au format international, sans +, espaces ou tirets.
+Exemple pour 0555 12 34 56 :
+const WHATSAPP_NUMBER="213555123456";
+
+Quand le client confirme, WhatsApp s'ouvre avec les produits, quantités, total et coordonnées de livraison.

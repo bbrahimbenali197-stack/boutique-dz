@@ -1,53 +1,6 @@
-<!doctype html>
-<html lang="fr">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Boutique DZ</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-<header>
-  <div class="top"><div class="brand">Boutique <span>DZ</span></div>
-    <button class="cart" onclick="openCart()">🛒 Panier <b id="cartCount">0</b></button>
-  </div>
-  <div class="hero"><div><p class="tag">🇩🇿 Livraison partout en Algérie</p>
-    <h1>Des produits utiles,<br><span>au meilleur prix.</span></h1>
-    <p>Commandez en ligne. Paiement à la livraison.</p>
-    <a href="#products" class="btn">Voir les produits</a></div></div>
-</header>
-
-<main id="products">
-  <div class="section-head"><h2>Nos produits</h2><input id="search" placeholder="Rechercher un produit..." oninput="renderProducts()"></div>
-  <div id="productsGrid" class="grid"></div>
-</main>
-
-<section class="why"><h2>Pourquoi commander chez nous ?</h2>
-  <div class="features"><div>🚚 <b>Livraison</b><small>Partout en Algérie</small></div>
-  <div>💵 <b>Paiement à la livraison</b><small>Payez à la réception</small></div>
-  <div>📞 <b>Service client</b><small>Nous confirmons votre commande</small></div></div>
-</section>
-
-<footer>© 2026 Boutique DZ — Tous droits réservés</footer>
-
-<div id="cartModal" class="modal hidden"><div class="box">
-  <button class="close" onclick="closeCart()">×</button><h2>Votre panier</h2>
-  <div id="cartItems"></div><div class="total">Total : <strong id="cartTotal">0 DA</strong></div>
-  <button class="btn full" onclick="showOrder()">Commander</button>
-</div></div>
-
-<div id="orderModal" class="modal hidden"><div class="box">
-  <button class="close" onclick="closeOrder()">×</button><h2>Finaliser la commande</h2>
-  <form id="orderForm" onsubmit="submitOrder(event)">
-    <input name="name" required placeholder="Nom et prénom">
-    <input name="phone" required placeholder="Téléphone">
-    <input name="wilaya" required placeholder="Wilaya">
-    <input name="commune" required placeholder="Commune">
-    <textarea name="address" required placeholder="Adresse de livraison"></textarea>
-    <button class="btn full">Confirmer la commande</button>
-  </form>
-  <p class="note">Paiement à la livraison. Votre commande sera confirmée par téléphone.</p>
-</div></div>
-<script src="script.js"></script>
-</body>
-</html>
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Boutique DZ</title><link rel="stylesheet" href="style.css"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js"></script></head><body><header><h1>Boutique DZ</h1><a href="admin.html">Administration</a></header><main><h2>Nos produits</h2><div id="products">Chargement...</div><section><h2>Commande</h2><div id="cart">Panier vide</div><form id="form"><input id="customer_name" placeholder="Nom et prénom" required><input id="phone" placeholder="Téléphone" required><input id="wilaya" placeholder="Wilaya" required><input id="commune" placeholder="Commune"><input id="address" placeholder="Adresse"><button>Commander</button></form><p id="msg"></p></section></main><script>
+let ps=[],cart=[];const $=id=>document.getElementById(id);const esc=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));const money=x=>Number(x).toLocaleString("fr-DZ")+" DA";
+async function load(){let r=await sb.from("products").select("*").eq("active",true).order("created_at",{ascending:false});if(r.error){$("products").textContent=r.error.message;return}ps=r.data||[];$("products").innerHTML=ps.map(p=>`<article><img src="${esc(p.image_url)}"><h3>${esc(p.name)}</h3><p>${esc(p.description||"")}</p><b>${money(p.price)}</b><button onclick="add(${p.id})">Ajouter</button></article>`).join("")||"Aucun produit."}
+function add(id){let p=ps.find(x=>x.id===id);if(p)cart.push(p);render()}function render(){$("cart").innerHTML=cart.length?cart.map((p,i)=>`${esc(p.name)} — ${money(p.price)} <button type="button" onclick="cart.splice(${i},1);render()">×</button>`).join("<br>"):"Panier vide"}
+$("form").onsubmit=async e=>{e.preventDefault();if(!cart.length){$("msg").textContent="Ajoutez un produit.";return}let total=cart.reduce((s,p)=>s+Number(p.price),0),o={customer_name:$("customer_name").value,phone:$("phone").value,wilaya:$("wilaya").value,commune:$("commune").value,address:$("address").value,total,items:cart.map(p=>({id:p.id,name:p.name,price:p.price}))};let r=await sb.from("orders").insert(o);if(r.error){$("msg").textContent=r.error.message;return}let t="Bonjour, commande :%0A"+cart.map(p=>"- "+p.name+" : "+money(p.price)).join("%0A")+"%0ATotal : "+money(total)+"%0ANom : "+encodeURIComponent(o.customer_name)+"%0ATél : "+encodeURIComponent(o.phone)+"%0AWilaya : "+encodeURIComponent(o.wilaya)+"%0AAdresse : "+encodeURIComponent(o.address);window.open("https://wa.me/"+WHATSAPP_NUMBER+"?text="+t,"_blank");cart=[];render();e.target.reset();$("msg").textContent="Commande enregistrée."};load();
+</script></body></html>
